@@ -1,0 +1,122 @@
+version: '3.8'
+
+# ============================================================================
+# Autor: Lucas Rohr Carreno
+# TOPOLOGIA DE REDES - TRABALHO I - GRAU A
+# Objetivo: 5 Roteadores distribuídos em 3 Sistemas Autônomos (AS 100, 200, 300)
+# Tipo de Topologia: Triangular (AS 100 e AS 200 conectados ao AS 300)
+#
+# Plataforma de Roteamento: FRRouting (FRR) - https://frrouting.org/
+#   - FRRouting (FRR) é um fork direto e ativamente mantido do Quagga,
+#     sendo padrão atual para orquestração de roteamento em containers, com foco em sistemas Linux.
+#   - Possui otimização de desempenho e suporte a protocolos de roteamento como BGP, RIP, OSPF, entre outros.
+# ============================================================================
+
+services:
+  # ---------------------------------------------------------
+  # SISTEMA AUTÔNOMO 100 (AS 100) - Roteadores 1 e 2
+  # ---------------------------------------------------------
+  router1-as100:
+    image: frrouting/frr:latest
+    container_name: router1
+    # 'privileged' é obrigatório para que o container Docker possa alterar as 
+    # tabelas de roteamento do kernel Linux (namespaces de rede virtuais)
+    privileged: true
+    sysctls:
+      # Habilita o encaminhamento de pacotes IPv4 no kernel, 
+      # transformando o container em um roteador funcional
+      - net.ipv4.ip_forward=1
+    networks:
+      net-as100-internal:
+        ipv4_address: 10.100.0.1 # Faixa de rede interna do AS100 usando Classe A com máscara /24
+      net-bgp-100-300:
+        ipv4_address: 192.168.13.1 # Enlace direto com o AS300 usando Classe C com máscara /30
+
+  router2-as100:
+    image: frrouting/frr:latest
+    container_name: router2
+    privileged: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      net-as100-internal:
+        ipv4_address: 10.100.0.2   # Conectado ao Router 1 via rede interna usando Classe A com máscara /24
+      net-bgp-100-200:
+        ipv4_address: 192.168.12.1 # Enlace de borda com o AS200 usando Classe C com máscara /30
+
+  # ---------------------------------------------------------
+  # SISTEMA AUTÔNOMO 200 (AS 200) - Roteadores 3 e 4
+  # ---------------------------------------------------------
+  router3-as200:
+    image: frrouting/frr:latest
+    container_name: router3
+    privileged: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      net-as200-internal:
+        ipv4_address: 10.200.0.1 # Faixa de rede interna do AS200 usando Classe A com máscara /24
+      net-bgp-100-200:
+        ipv4_address: 192.168.12.2 # Enlace de borda com o AS100 usando Classe C com máscara /30
+
+  router4-as200:
+    image: frrouting/frr:latest
+    container_name: router4
+    privileged: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      net-as200-internal:
+        ipv4_address: 10.200.0.2   # Conectado ao Router 3 via rede interna usando Classe A com máscara /24
+      net-bgp-200-300:
+        ipv4_address: 192.168.23.1 # Enlace de borda com o AS300 usando Classe C com máscara /30
+
+  # ---------------------------------------------------------
+  # SISTEMA AUTÔNOMO 300 (AS 300) - Roteador 5
+  # ---------------------------------------------------------
+  router5-as300:
+    image: frrouting/frr:latest
+    container_name: router5
+    privileged: true
+    sysctls:
+      - net.ipv4.ip_forward=1
+    networks:
+      net-as300-lan:
+        ipv4_address: 10.300.0.1   # Simula uma rede local de destino final
+      net-bgp-200-300:
+        ipv4_address: 192.168.23.2 # Enlace de borda com o AS200
+      net-bgp-100-300:
+        ipv4_address: 192.168.13.2 # Caminho alternativo de volta para o AS100
+
+# ============================================================================
+# TOPOLOGIA FÍSICA - DEFINIÇÃO DAS SUB-REDES FÍSICAS (ENLACES)
+# ============================================================================
+networks:
+  # --- Redes Internas (IGP) - Utilizando Classe A com CIDR /24 ---
+  net-as100-internal:
+    ipam:
+      config:
+        - subnet: 10.100.0.0/24
+  net-as200-internal:
+    ipam:
+      config:
+        - subnet: 10.200.0.0/24
+  net-as300-lan:
+    ipam:
+      config:
+        - subnet: 10.300.0.0/24
+
+  # --- Enlaces Externos BGP (EGP) - Utilizando Classe C com CIDR /30 ---
+  # O uso de /30 é indicado para links ponto a ponto entre Sistemas Autônomos, permitindo apenas 2 endereços IP válidos por enlace
+  net-bgp-100-200: # Configuração entre AS100 e AS200
+    ipam:
+      config:
+        - subnet: 192.168.12.0/30
+  net-bgp-200-300: # Configuração entre AS200 e AS300
+    ipam:
+      config:
+        - subnet: 192.168.23.0/30
+  net-bgp-100-300: # Configuração entre AS100 e AS300
+    ipam:
+      config:
+        - subnet: 192.168.13.0/30

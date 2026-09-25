@@ -1,0 +1,6 @@
+Protocolo,Tabela_R1_Entradas,RTT_Medio_ms,Perda_Pacotes_Pct,CPU_Router1_Pct,RAM_Router1_MB,Total_Pacotes_R1,Total_Bytes_R1,Tempo_Convergencia_s
+OSPF,5,0.17,0.0,0.42,21.67,171,19232,30.00
+RIP,5,0.211,0.0,0.16,22.78,348,27582,30.00
+RIP_LOCAL,5,0.207,0.0,0.1,22.66,395,32393,30.00
+OSPF_LOCAL,5,0.167,0.0,0.07,22.71,430,33586,30.00
+BGP_ONLY,5,0.229,0.0,0.09,23.41,701,55799,30.00

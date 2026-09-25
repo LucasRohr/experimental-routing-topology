@@ -79,7 +79,7 @@ def get_network_traffic_stats(container_name):
             total_packets += (rx_pkts + tx_pkts)
     return total_packets, total_bytes
 
-def simulate_failure_and_measure_convergence(primary_link_net, test_router, target_ip):
+def simulate_failure_and_measure_convergence(primary_link_net, test_router, target_ip, reconnect_ip="172.25.13.2"):
     """
     Derruba uma rede de enlace no Docker e mede o tempo (em segundos) até que o tráfego se restabeleça pelo caminho alternativo
     """
@@ -89,7 +89,7 @@ def simulate_failure_and_measure_convergence(primary_link_net, test_router, targ
     start_time = time.time()
     
     # Desconecta o link no Docker
-    exec_cmd(f"sudo docker network disconnect {primary_link_net} router1")
+    exec_cmd(f"sudo docker network disconnect {primary_link_net} {test_router}")
     
     convergence_time = None
     timeout = 30.0 # Tempo máximo de espera para convergência
@@ -104,7 +104,7 @@ def simulate_failure_and_measure_convergence(primary_link_net, test_router, targ
         time.sleep(0.1)
         
     print(f"[+] Reestabelecendo o enlace: {primary_link_net}...")
-    exec_cmd(f"sudo docker network connect {primary_link_net} router1 --ip 172.25.13.2")
+    exec_cmd(f"sudo docker network connect {primary_link_net} {test_router} --ip {reconnect_ip}")
     
     # Tempo para estabilização pós-reconexão
     time.sleep(5)

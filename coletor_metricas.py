@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Autor: Lucas Rohr Carreno
 import subprocess
 import json
 import time

@@ -111,12 +111,98 @@ def simulate_failure_and_measure_convergence(primary_link_net, test_router, targ
     
     return convergence_time if convergence_time else timeout
 
+# Função dedicada para medição de tráfego exclusivamente interno no AS 100 (teste intra-AS RIP e OSPF)
+def run_intra_as_collection(protocol_name, source_router="router1", target_ip="10.100.0.3", link_to_fail="topologia_net-as100-internal", reconnect_ip="10.100.0.2"):
+    """
+    Mede latência, perdas e falhas do Router 1 até o Router 2 dentro do AS 100.
+    """
+    print(f"=== INICIANDO BATERIA DE TESTES INTRA-AS (LOCAL): PROTOCOLO {protocol_name} ===")
+    
+    table_size_r1 = get_routing_table_size(source_router)
+    table_size_r2 = get_routing_table_size("router2")
+    print(f"[*] Tamanho Tabela Roteamento ({source_router}): {table_size_r1} entradas")
+    print(f"[*] Tamanho Tabela Roteamento (router2): {table_size_r2} entradas")
+
+    rtt, loss = measure_rtt(source_router, target_ip, count=20)
+    print(f"[*] RTT Médio Intra-AS ({source_router} -> {target_ip}): {rtt:.3f} ms")
+    print(f"[*] Perda de Pacotes Inicial: {loss:.1f}%")
+
+    cpu_r1, mem_r1 = get_container_resources(source_router)
+    print(f"[*] Consumo Hardware ({source_router}): CPU = {cpu_r1:.2f}%, RAM = {mem_r1:.2f} MB")
+
+    pkts_r1, bytes_r1 = get_network_traffic_stats(source_router)
+    print(f"[*] Tráfego de Rede ({source_router}): {pkts_r1} pacotes, {bytes_r1 / 1024:.2f} KB")
+
+    conv_time = simulate_failure_and_measure_convergence(link_to_fail, source_router, target_ip, reconnect_ip)
+    print(f"[*] Tempo de Convergência pós-falha Intra-AS: {conv_time:.2f} segundos")
+
+    return {
+        "protocol": protocol_name,
+        "table_size": table_size_r1,
+        "rtt": rtt,
+        "loss": loss,
+        "cpu": cpu_r1,
+        "mem": mem_r1,
+        "packets": pkts_r1,
+        "bytes": bytes_r1,
+        "conv_time": conv_time
+    }
+
+# Função centralizada para gravação no arquivo CSV sem alterar o cabeçalho existente
+def save_to_csv(data_dict, csv_file="metricas_desempenho.csv"):
+    file_exists = False
+    try:
+        with open(csv_file, "r"): file_exists = True
+    except FileNotFoundError:
+        pass
+
+    with open(csv_file, "a", newline="") as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow([
+                "Protocolo", 
+                "Tabela_R1_Entradas", 
+                "RTT_Medio_ms", 
+                "Perda_Pacotes_Pct", 
+                "CPU_Router1_Pct", 
+                "RAM_Router1_MB", 
+                "Total_Pacotes_R1", 
+                "Total_Bytes_R1", 
+                "Tempo_Convergencia_s"
+            ])
+        writer.writerow([
+            data_dict["protocol"], 
+            data_dict["table_size"], 
+            data_dict["rtt"], 
+            data_dict["loss"], 
+            data_dict["cpu"], 
+            data_dict["mem"], 
+            data_dict["packets"], 
+            data_dict["bytes"], 
+            f"{data_dict['conv_time']:.2f}"
+        ])
+    print(f"[✔] Resultados atualizados em {csv_file}\n")
+
 def main():
     parser = argparse.ArgumentParser(description="Coletor de Métricas de Roteamento")
     # Argumento obrigatório para especificar o protocolo sob teste
-    # Opções válidas: OSPF, RIP, BGP_ONLY
-    parser.add_argument("--protocol", required=True, choices=["OSPF", "RIP", "BGP_ONLY"], help="Nome do protocolo sob teste")
+    # Opções válidas: OSPF, RIP, BGP_ONLY, RIP_LOCAL, OSPF_LOCAL
+    parser.add_argument("--protocol", required=True, 
+                        choices=["OSPF", "RIP", "BGP_ONLY", "RIP_LOCAL", "OSPF_LOCAL"], 
+                        help="Nome do protocolo sob teste")
     args = parser.parse_args()
+
+    # Desvio condicional para executar a medição local
+    if args.protocol in ["RIP_LOCAL", "OSPF_LOCAL"]:
+        results = run_intra_as_collection(
+            protocol_name=args.protocol,
+            source_router="router1",
+            target_ip="10.100.0.3", # IP do router2 na rede do AS 100
+            link_to_fail="topologia_net-as100-internal",
+            reconnect_ip="10.100.0.2"
+        )
+        save_to_csv(results)
+        return
 
     print(f"=== INICIANDO BATERIA DE TESTES: PROTOCOLO {args.protocol} ===")
     
@@ -147,41 +233,18 @@ def main():
     print(f"[*] Tempo de Convergência pós-falha: {conv_time:.2f} segundos")
 
     # 6. Exportação dos Dados para CSV (para alimentar os gráficos do trabalho)
-    csv_file = "metricas_desempenho.csv"
-    file_exists = False
-    try:
-        with open(csv_file, "r"): file_exists = True
-    except FileNotFoundError:
-        pass
-
-    with open(csv_file, "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            # Cabeçalho cobrindo métricas de controle e hardware
-            writer.writerow([
-                "Protocolo", 
-                "Tabela_R1_Entradas", 
-                "RTT_Medio_ms", 
-                "Perda_Pacotes_Pct", 
-                "CPU_Router1_Pct", 
-                "RAM_Router1_MB", 
-                "Total_Pacotes_R1", 
-                "Total_Bytes_R1", 
-                "Tempo_Convergencia_s"
-            ])
-        writer.writerow([
-            args.protocol, 
-            table_size_r1, 
-            rtt, 
-            loss, 
-            cpu_r1, 
-            mem_r1, 
-            pkts_r1, 
-            bytes_r1, 
-            f"{conv_time:.2f}"
-        ])
-
-    print(f"[✔] Resultados salvos com sucesso em {csv_file}\n")
+    results = {
+        "protocol": args.protocol,
+        "table_size": table_size_r1,
+        "rtt": rtt,
+        "loss": loss,
+        "cpu": cpu_r1,
+        "mem": mem_r1,
+        "packets": pkts_r1,
+        "bytes": bytes_r1,
+        "conv_time": conv_time
+    }
+    save_to_csv(results)
 
 if __name__ == "__main__":
     main()

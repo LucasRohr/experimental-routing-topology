@@ -2,6 +2,12 @@
 
 Trabalho de avaliação experimental e metrológica de desempenho entre os protocolos de roteamento dinâmico **OSPF**, **RIP** e **BGP**, sobre uma topologia virtualizada composta por 5 roteadores distribuídos em 3 Sistemas Autônomos (AS) independentes.
 
+## Vídeo de demonstração
+
+Gravação com demonstração de funcionamento da topologia aplicada com protocolos OSPF, RIP e BGP pode ser visualizada abaixo:
+
+[![Gravação com demonstração de funcionamento](https://youtu.be/J2gColJDjOw)](https://youtu.be/J2gColJDjOw)
+
 ---
 
 ## 1. Arquitetura da Topologia e Decisões de Projeto

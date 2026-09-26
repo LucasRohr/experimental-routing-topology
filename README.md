@@ -41,22 +41,22 @@ A topologia foi projetada em uma configuração **triangular** para garantir cam
 
 Para viabilizar a criação de múltiplos roteadores em uma única máquina sem exigir uma infraestrutura pesada de máquinas virtuais completas, optou-se pela utilização do **Docker** e do **Docker Compose**:
 
-* **Virtualização Leve por Contêineres:** O Docker utiliza *namespaces* de rede e *cgroups* do kernel Linux para isolar cada roteador de forma independente. Isso permite executar 5 roteadores com consumo insignificante de CPU e memória RAM, diferentemente de hypervisors tradicionais que exigiriam múltiplos sistemas operacionais completos instalados.
-* **Orquestração Declarativa via Docker Compose:** O arquivo `docker-compose.yml` permite especificar toda a infraestrutura em código. Ele gerencia a criação automatizada das 6 sub-redes virtuais do tipo *bridge*, a atribuição estática de endereços IP em cada interface dos roteadores, as permissões de acesso privilegiado (`privileged: true`) necessárias para manipulação da FIB do kernel e o encaminhamento de pacotes IPv4 (`net.ipv4.ip_forward=1`).
+* **Virtualização Leve por Containers:** O Docker utiliza *namespaces* de rede e *cgroups* do kernel Linux para isolar cada roteador de forma independente. Isso permite executar 5 roteadores com consumo baixo de CPU e memória RAM, diferentemente de hypervisors tradicionais (como VMs) que exigiriam múltiplos sistemas operacionais completos instalados.
+* **Orquestração Declarativa via Docker Compose:** O arquivo `docker-compose.yml` permite especificar toda a infraestrutura em código. Ele gerencia a criação automatizada das 6 sub-redes virtuais do tipo *bridge*, a atribuição estática de endereços IP em cada interface dos roteadores, as permissões de acesso privilegiado (`privileged: true`) necessárias para manipulação e o encaminhamento de pacotes IPv4 (`net.ipv4.ip_forward=1`).
 
 ### 1.3 Justificativa da Escolha da Plataforma (FRRouting)
 
 A escolha da suíte de roteamento de código aberto **FRRouting (FRR)** versão `8.5.0` fundamenta-se nos seguintes aspectos:
 
-* **Substituição Tecnológica:** O FRR é o *fork* direto, ativo e mantido do antigo Quagga, consolidado como padrão industrial para orquestração de roteamento em contêineres e ambientes de nuvem.
-* **Arquitetura Modular:** Gerencia cada protocolo de roteamento em *daemons* isolados (`ospfd`, `ripd`, `bgpd`), coordenados pela biblioteca central `zebra`.
+* **Substituição Tecnológica:** O FRR é o *fork* direto, ativo e mantido do antigo Quagga, consolidado como padrão industrial para orquestração de roteamento em containers e ambientes de nuvem.
+* **Arquitetura Modular:** Gerencia cada protocolo de roteamento em *daemons* isolados (`ospfd`, `ripd`, `bgpd`), coordenados por biblioteca central.
 
 
-* **Compatibilidade Multiplataforma:** A imagem `quay.io/frrouting/frr:8.5.0` fornece binários nativos compilados para a arquitetura **ARM64**, garantindo pleno desempenho em ambientes virtualizados sobre processadores Apple Silicon via máquina virtual Ubuntu Linux no UTM.
+* **Compatibilidade Multiplataforma para ambiente utilizado:** A imagem `quay.io/frrouting/frr:8.5.0` fornece binários nativos compilados para a arquitetura **ARM64**, garantindo pleno desempenho em ambientes virtualizados sobre processadores Apple Silicon via máquina virtual Ubuntu Linux no UTM. Isso adequa-se com o ambiente utilizado durante o trabalho, possuindo um MacOS como host e realizando toda a configuração e testes em VM Linux Ubuntu através do virtualizador UTM.
 
 ### 1.4 Endereçamento IP e Adequação ao IPAM do Docker
 
-Para evitar conflitos de vinculação de rede no hospedeiro Linux (`Address already in use`), foi aplicada uma adequação fundamental no mascaramento das sub-redes:
+Para evitar conflitos de vinculação de rede no hospedeiro Linux (`Address already in use`), foi aplicada uma adequação no mascaramento das sub-redes:
 
 * **Redes Internas (IGP):** Utilizam blocos `/24` (`10.100.0.0/24`, `10.200.0.0/24` e `10.30.0.0/24`).
 
@@ -80,9 +80,9 @@ sudo docker compose up -d
 
 ![Alt Text](prints/docker_config/docker_compose_up.png)
 
-*Figura 2.1 — Criação das 6 sub-redes virtuais e inicialização dos 5 contêineres de roteadores.*
+*Figura 2.1 — Criação das 6 sub-redes virtuais e inicialização dos 5 containers de roteadores.*
 
-Para confirmar que todos os contêineres foram iniciados corretamente e permanecem ativos:
+Para confirmar que todos os containers foram iniciados corretamente e permanecem ativos:
 
 ```bash
 sudo docker ps
@@ -93,7 +93,7 @@ sudo docker ps
 
 *Figura 2.2 — Confirmação do estado 'Up' de todos os roteadores.*
 
-Por padrão, a imagem do FRRouting mantém os processos dos protocolos desativados. Ativamos os *daemons* `ospfd`, `ripd` e `bgpd` alterando o arquivo `/etc/frr/daemons`:
+Por padrão, a imagem do FRRouting mantém os processos dos protocolos desativados. Ativamos os *daemons* `ospfd`, `ripd` e `bgpd` alterando o arquivo `/etc/frr/daemons`, utilizando os comandos abaixo:
 
 ```bash
 for r in router1 router2 router3 router4 router5; do
@@ -171,7 +171,7 @@ sudo docker exec -it router3 vtysh -c "show ip ospf neighbor"
 
 ### 2.3 Configuração do BGP e Resolução da RFC 8212
 
-Estabeleceram-se as sessões eBGP de borda interligando os três Sistemas Autônomos[cite: 7, 8].
+Estabeleceram-se as sessões eBGP de borda interligando os três Sistemas Autônomos para garantir a conexão entre os mesmos através do roteamento.
 
 
 ![Alt Text](prints/configuracao_bgp/config_router_1_com_AS_300.png)
@@ -200,21 +200,21 @@ Estabeleceram-se as sessões eBGP de borda interligando os três Sistemas Autôn
 
 **Diagnóstico e Resolução de Bloqueio por Política (RFC 8212):**
 
-Na versão 8.5.0 do FRRouting, a diretiva de segurança RFC 8212 é ativada por padrão, fazendo com que as rotas BGP sejam rejeitadas com a sinalização `(Policy)` na tabela `show ip bgp summary`[cite: 7, 8].
+Na versão 8.5.0 do FRRouting, a diretiva de segurança RFC 8212 é ativada por padrão, fazendo com que as rotas BGP sejam rejeitadas com a sinalização `(Policy)` na tabela `show ip bgp summary`.
 
 
 ![Alt Text](prints/configuracao_bgp/config_router_1_com_AS_300.png)
 
 *Figura 2.16 — Diagnóstico do estado '(Policy)' impedindo a importação de rotas BGP.*
 
-Para solucionar o bloqueio e liberar a troca de prefixos inter-AS, aplicou-se a diretiva `no bgp ebgp-requires-policy` em todos os roteadores[cite: 7, 8]:
+Para solucionar o bloqueio e liberar a troca de prefixos inter-AS, aplicou-se a diretiva `no bgp ebgp-requires-policy` em todos os roteadores:
 
 
 ![Alt Text](prints/configuracao_bgp/config_policy_router_1.png)
 
 *Figura 2.17 — Aplicação da instrução 'no bgp ebgp-requires-policy'.*
 
-Após a aplicação da instrução e execução de um *soft reset* (`clear ip bgp * soft`), o estado do vizinho passou para a contagem de prefixos recebidos (`PfxRcd = 2`), e a comunicação de ponta a ponta respondeu com 0% de perda[cite: 1, 8]:
+Após a aplicação da instrução e execução de um *soft reset* (`clear ip bgp * soft`), o estado do vizinho passou para a contagem de prefixos recebidos (`PfxRcd = 2`), e a comunicação de ponta a ponta respondeu com 0% de perda:
 
 
 ![Alt Text](prints/configuracao_bgp/resultado_config_router_1_com_AS_300.png)
@@ -225,7 +225,7 @@ Após a aplicação da instrução e execução de um *soft reset* (`clear ip bg
 
 ### 2.4 Cenário 2: Roteamento RIP (IGP) + BGP (EGP)
 
-Para testar o protocolo de vetor de distância de forma isolada, removeu-se o OSPF e ativou-se o **RIPv2** nos ASs 100 e 200[cite: 7, 9].
+Para testar o protocolo de vetor de distância de forma isolada, removeu-se o OSPF e ativou-se o **RIPv2** nos ASs 100 e 200.
 
 **Configuração do RIP nos Roteadores:**
 
@@ -256,7 +256,7 @@ Para testar o protocolo de vetor de distância de forma isolada, removeu-se o OS
 
 **Validação Interna do RIP:**
 
-A verificação da tabela interna do *daemon* RIP (`show ip rip`) confirmou o processamento do protocolo na interface local[cite: 9]:
+A verificação da tabela interna do *daemon* RIP (`show ip rip`) confirmou o processamento do protocolo na interface local:
 
 
 ![Alt Text](prints/configuracao_rip/config_rip_router_1.png)
@@ -267,7 +267,7 @@ A verificação da tabela interna do *daemon* RIP (`show ip rip`) confirmou o pr
 
 ### 2.5 Cenário 3: Roteamento BGP Puro (iBGP + eBGP)
 
-No terceiro cenário, desativaram-se todos os IGPs e estendeu-se o BGP para atuar de forma única (iBGP interno com `next-hop-self` e eBGP de borda)[cite: 1, 7].
+No terceiro cenário, desativaram-se todos os IGPs e estendeu-se o BGP para atuar de forma única (iBGP interno com `next-hop-self` e eBGP de borda).
 
 
 ![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_1.png)
@@ -296,7 +296,7 @@ No terceiro cenário, desativaram-se todos os IGPs e estendeu-se o BGP para atua
 
 ---
 
-## 3. Automação e Coleta Metrológica (`coletor_metricas.py`)
+## 3. Automação e Coleta (`coletor_metricas.py`)
 
 A automação da coleta foi desenvolvida em Python. O script simula a falha de um enlace de borda desconectando dinamicamente a rede `topologia_net-bgp-100-300` via chamada de comandos ao Docker e mede o tempo de recuperação da rota alternativa.
 
@@ -364,17 +364,17 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 
 #### 4.1.1 Desempenho do OSPF Puro (OSPF_LOCAL) e OSPF Global (OSPF + BGP)
 
-* **Cenário OSPF_LOCAL (Intra-AS 100):** O OSPF puro operando estritamente dentro do AS 100 alcançou a menor latência média de todo o experimento, registrando **0,167 ms**. Por ser um protocolo do tipo *Link-State*, o OSPF utiliza o algoritmo de Dijkstra para calcular a menor árvore de caminhos[cite: 7, 9]. O consumo de CPU permaneceu em apenas 0,07% e o uso de memória RAM em 22,71 MB.
-* **Cenário OSPF Global (Fim a Fim):** Ao estender a comunicação até o destino remoto no AS 300 via BGP, o RTT manteve-se extremamente baixo, em **0,170 ms**. O OSPF transmitiu apenas 171 pacotes (18,78 KB de tráfego acumulado), demonstrando alta eficiência ao enviar atualizações apenas mediante mudanças de estado de enlace[cite: 7, 9]. Durante a fase inicial de montagem da base de dados topológica (LSDB), registrou-se um leve pico de uso de CPU (0,42%), estabilizando-se em seguida[cite: 9].
+* **Cenário OSPF_LOCAL (Intra-AS 100):** O OSPF puro operando estritamente dentro do AS 100 alcançou a menor latência média de todo o experimento, registrando **0,167 ms**. Por ser um protocolo do tipo *Link-State*, o OSPF utiliza o algoritmo de Dijkstra para calcular a menor árvore de caminhos. O consumo de CPU permaneceu em apenas 0,07% e o uso de memória RAM em 22,71 MB.
+* **Cenário OSPF Global (Fim a Fim):** Ao estender a comunicação até o destino remoto no AS 300 via BGP, o RTT manteve-se extremamente baixo, em **0,170 ms**. O OSPF transmitiu apenas 171 pacotes (18,78 KB de tráfego acumulado), demonstrando alta eficiência ao enviar atualizações apenas mediante mudanças de estado de enlace. Durante a fase inicial de montagem da base de dados topológica (Link State DB), registrou-se um leve pico de uso de CPU (0,42%), estabilizando-se em seguida.
 
 #### 4.1.2 Desempenho do RIP Puro (RIP_LOCAL) e RIP Global (RIP + BGP)
 
-* **Cenário RIP_LOCAL (Intra-AS 100):** No teste isolado dentro do AS 100, o RIP puro registrou latência de **0,207 ms**, sensivelmente superior ao OSPF local (0,167 ms). Essa diferença reflete a mecânica de roteamento por vetor de distância baseada no número de saltos (*hop count*)[cite: 9]. O volume de pacotes acumulado foi de 395 pacotes (31,63 KB), devido ao envio contínuo de atualizações periódicas por broadcast a cada 30 segundos[cite: 9].
-* **Cenário RIP Global (Fim a Fim):** Quando combinado com o BGP de borda, o RIP global registrou RTT de **0,211 ms** e volume de 348 pacotes (26,93 KB). A sobrecarga constante de tráfego de controle gerada pelos anúncios periódicos do RIP o torna menos eficiente que o OSPF em ambientes sujeitos a crescimento de malha[cite: 7, 9].
+* **Cenário RIP_LOCAL (Intra-AS 100):** No teste isolado dentro do AS 100, o RIP puro registrou latência de **0,207 ms**, levemente superior ao OSPF local (0,167 ms). Essa diferença reflete a mecânica de roteamento por vetor de distância baseada no número de saltos (*hop count*). O volume de pacotes acumulado foi de 395 pacotes (31,63 KB), devido ao envio contínuo de atualizações periódicas por broadcast a cada 30 segundos.
+* **Cenário RIP Global (Fim a Fim):** Quando combinado com o BGP de borda, o RIP global registrou RTT de **0,211 ms** e volume de 348 pacotes (26,93 KB). A sobrecarga constante de tráfego de controle gerada pelos anúncios periódicos do RIP o torna menos eficiente que o OSPF em ambientes sujeitos a crescimento de nodos.
 
 #### 4.1.3 Desempenho do BGP Puro (BGP_ONLY)
 
-* **Cenário BGP_ONLY (iBGP + eBGP de ponta a ponta):** Ao eliminar todos os IGPs e utilizar exclusivamente o BGP, registrou-se a maior latência média do estudo (**0,229 ms**) e o maior volume de tráfego de rede (701 pacotes e 54,49 KB). Esse overhead é decorrente da sobrecarga de manter sessões TCP permanentes na porta 179 entre todos os nós, trocando mensagens de *Keepalive* e atualizações do vetor de caminhos (*Path-Vector*)[cite: 7, 9]. O consumo de memória RAM atingiu seu nível máximo (**23,41 MB**), comprovando que a estrutura do BGP exige maior armazenamento para guardar a tabela de atributos da RIB[cite: 7, 9].
+* **Cenário BGP_ONLY (iBGP + eBGP de ponta a ponta):** Ao eliminar todos os IGPs e utilizar exclusivamente o BGP, registrou-se a maior latência média do estudo (**0,229 ms**) e o maior volume de tráfego de rede (701 pacotes e 54,49 KB). Esse overhead é decorrente da sobrecarga de manter sessões TCP permanentes na porta 179 entre todos os nós, trocando mensagens de *Keepalive* e atualizações do vetor de caminhos (*Path-Vector*). O consumo de memória RAM atingiu seu nível máximo (**23,41 MB**), comprovando que a estrutura do BGP exige maior armazenamento para guardar a tabela de atributos da RIB em relação ao uso dos protocolos OSPF e RIP como IGP.
 
 ---
 
@@ -398,7 +398,7 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 
 *Figura 4.2 — Volume de pacotes e bytes trafegados por protocolo.*
 
-* **Síntese de Overhead:** O **BGP_ONLY** gerou a maior taxa de transmissão no ambiente (701 pacotes e 54,5 KB de volume). O **RIP** transmitiu mais pacotes de controle que o OSPF devido aos anúncios periódicos a cada 30 segundos[cite: 9]. O **OSPF** provou ser o protocolo mais silencioso e econômico em termos de tráfego de rede[cite: 7, 9].
+* **Síntese de Overhead:** O **BGP_ONLY** gerou a maior taxa de transmissão no ambiente (701 pacotes e 54,5 KB de volume). O **RIP** transmitiu mais pacotes de controle que o OSPF devido aos anúncios periódicos a cada 30 segundos. O **OSPF** provou ser o protocolo mais silencioso e econômico em termos de tráfego de rede.
 
 
 
@@ -409,13 +409,13 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 
 *Figura 4.3 — Utilização de CPU e Memória RAM no Roteador 1.*
 
-* **Síntese de Hardware:** O consumo de CPU permaneceu baixo em todos os contêineres. O **OSPF** teve um pico inicial de CPU (0,42%) durante o cálculo do algoritmo SPF[cite: 1, 9]. O uso de memória RAM variou proporcionalmente à complexidade da tabela mantida na memória: OSPF em 21,67 MB, RIP em 22,78 MB e BGP em 23,41 MB.
+* **Síntese de Hardware:** O consumo de CPU permaneceu baixo em todos os containers. O **OSPF** teve um pico inicial de CPU (0,42%) durante o cálculo do algoritmo SPF. O uso de memória RAM variou proporcionalmente à complexidade da tabela mantida na memória: OSPF em 21,67 MB, RIP em 22,78 MB e BGP em 23,41 MB.
 
 
 
 #### 4. Análise do Tempo de Convergência em Caso de Falhas
 
-* **Análise Crítica da Convergência pós-Falha:** Todos os testes automatizados de interrupção de enlace registraram 30,00 segundos (limite de *timeout* do script de medição). Na física de operação do BGP de borda, ao desconectar o enlace primário entre o AS 100 e o AS 300, o BGP aguarda o estouro do seu temporizador de retenção (*Hold-Timer*, cujo valor padrão varia de 90 a 180 segundos no FRR) antes de declarar o par como inativo e reencaminhar os pacotes pelo caminho secundário (AS 100 -> AS 200 -> AS 300)[cite: 8].
+* **Análise Crítica da Convergência pós-Falha:** Todos os testes automatizados de interrupção de enlace registraram 30,00 segundos (limite de *timeout* do script de medição). Na física de operação do BGP de borda, ao desconectar o enlace primário entre o AS 100 e o AS 300, o BGP aguarda o estouro do seu temporizador de retenção (*Hold-Timer*, cujo valor padrão varia de 90 a 180 segundos no FRR) antes de declarar o par como inativo e reencaminhar os pacotes pelo caminho secundário (AS 100 -> AS 200 -> AS 300).
 
 
 

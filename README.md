@@ -1,73 +1,4 @@
-```python
-import zipfile
-import os
-
-with zipfile.ZipFile('experimental-routing-topology.zip', 'r') as zip_ref:
-    zip_ref.extractall('unzipped_repo')
-
-print("Files in unzipped_repo/prints:")
-for root, dirs, files in os.walk('unzipped_repo/prints'):
-    for f in files:
-        if f.endswith('.png'):
-            print(os.path.join(root, f).replace('unzipped_repo/', ''))
-
-print("\nFiles in unzipped_repo/experiments_results:")
-for root, dirs, files in os.walk('unzipped_repo/experiments_results'):
-    for f in files:
-        if f.endswith('.png'):
-            print(os.path.join(root, f).replace('unzipped_repo/', ''))
-
-
-```
-
-```text
-Files in unzipped_repo/prints:
-prints/docker_config/docker_compose_up.png
-prints/docker_config/docker_ps.png
-prints/docker_config/config_daemons_protocolos.png
-prints/configuracao_ospf/rotas_diretas_router_1.png
-prints/configuracao_ospf/rotas_dinamicas_AS_100.png
-prints/configuracao_ospf/config_ospf_router_2.png
-prints/configuracao_ospf/config_ospf_router_3.png
-prints/configuracao_ospf/config_ospf_router_1.png
-prints/configuracao_ospf/config_ospf_router_4.png
-prints/configuracao_ospf/rotas_dinamicas_AS_200.png
-prints/configuracao_rip/config_ip_rip_router_1.png
-prints/configuracao_rip/config_rip_router_4.png
-prints/configuracao_rip/config_rip_router_5.png
-prints/configuracao_rip/config_rip_router_1.png
-prints/configuracao_rip/config_rip_router_2.png
-prints/configuracao_rip/config_rip_router_3.png
-prints/resultados_metricas/resultados_coletor_rip_local.png
-prints/resultados_metricas/execucao_coletor_ospf.png
-prints/resultados_metricas/resultados_coletor_ospf_local.png
-prints/resultados_metricas/execucao_coletor_rip.png
-prints/resultados_metricas/resultados_ospf_csv.png
-prints/resultados_metricas/resultados_coletor_bgp_only.png
-prints/configuracao_bgp/config_router_1_com_AS_300.png
-prints/configuracao_bgp/config_router_5_com_AS_100_e_200.png
-prints/configuracao_bgp/config_router_2_com_AS_200.png
-prints/configuracao_bgp/config_policy_router_1.png
-prints/configuracao_bgp/resultado_config_router_1_com_AS_300.png
-prints/configuracao_bgp/config_router_4_com_AS_300.png
-prints/configuracao_bgp/config_router_3_com_AS_100.png
-prints/configuracao_bgp_only/config_bgp_only_router_1.png
-prints/configuracao_bgp_only/config_bgp_only_router_2.png
-prints/configuracao_bgp_only/config_bgp_only_router_3.png
-prints/configuracao_bgp_only/config_bgp_only_router_4.png
-prints/configuracao_bgp_only/config_bgp_only_router_5.png
-
-Files in unzipped_repo/experiments_results:
-experiments_results/grafico_rtt_comparativo.png
-experiments_results/grafico_consumo_hardware.png
-experiments_results/grafico_overhead_trafego.png
-
-
-```
-
 # Topologia Experimental de Roteamento Dinâmico (OSPF, RIP e BGP)
-
-
 
 Trabalho de avaliação experimental e metrológica de desempenho entre os protocolos de roteamento dinâmico **OSPF**, **RIP** e **BGP**, sobre uma topologia virtualizada composta por 5 roteadores distribuídos em 3 Sistemas Autônomos (AS) independentes.
 
@@ -197,14 +128,22 @@ Configurou-se o protocolo de estado de enlace **OSPF** (Área 0) internamente no
 
 **Configuração do OSPF no AS 100 e AS 200:**
 
+![Alt Text](prints/configuracao_ospf/config_ospf_router_1.png)
+
 *Figura 2.5 — Provisionamento OSPF no Router 1 (AS 100).*
 
+
+![Alt Text](prints/configuracao_ospf/config_ospf_router_2.png)
 
 *Figura 2.6 — Provisionamento OSPF no Router 2 (AS 100).*
 
 
+![Alt Text](prints/configuracao_ospf/config_ospf_router_3.png)
+
 *Figura 2.7 — Provisionamento OSPF no Router 3 (AS 200).*
 
+
+![Alt Text](prints/configuracao_ospf/config_ospf_router_4.png)
 
 *Figura 2.8 — Provisionamento OSPF no Router 4 (AS 200).*
 
@@ -219,8 +158,12 @@ sudo docker exec -it router3 vtysh -c "show ip ospf neighbor"
 ```
 
 
+![Alt Text](prints/configuracao_ospf/rotas_dinamicas_AS_100.png)
+
 *Figura 2.9 — Vizinhança OSPF estabelecida no estado 'Full' entre R1 e R2.*
 
+
+![Alt Text](prints/configuracao_ospf/rotas_dinamicas_AS_200.png)
 
 *Figura 2.10 — Vizinhança OSPF estabelecida no estado 'Full' entre R3 e R4.*
 
@@ -231,17 +174,27 @@ sudo docker exec -it router3 vtysh -c "show ip ospf neighbor"
 Estabeleceram-se as sessões eBGP de borda interligando os três Sistemas Autônomos[cite: 7, 8].
 
 
+![Alt Text](prints/configuracao_bgp/config_router_1_com_AS_300.png)
+
 *Figura 2.11 — Estabelecimento do peering eBGP entre R1 (AS 100) e R5 (AS 300).*
 
+
+![Alt Text](prints/configuracao_bgp/config_router_2_com_AS_200.png)
 
 *Figura 2.12 — Peering eBGP entre R2 (AS 100) e R3 (AS 200).*
 
 
+![Alt Text](prints/configuracao_bgp/config_router_3_com_AS_100.png)
+
 *Figura 2.13 — Peering eBGP entre R3 (AS 200) e R2 (AS 100).*
 
 
+![Alt Text](prints/configuracao_bgp/config_router_4_com_AS_300.png)
+
 *Figura 2.14 — Peering eBGP entre R4 (AS 200) e R5 (AS 300).*
 
+
+![Alt Text](prints/configuracao_bgp/config_router_5_com_AS_100_e_200.png)
 
 *Figura 2.15 — Peering eBGP do R5 (AS 300) com R1 e R4.*
 
@@ -250,15 +203,21 @@ Estabeleceram-se as sessões eBGP de borda interligando os três Sistemas Autôn
 Na versão 8.5.0 do FRRouting, a diretiva de segurança RFC 8212 é ativada por padrão, fazendo com que as rotas BGP sejam rejeitadas com a sinalização `(Policy)` na tabela `show ip bgp summary`[cite: 7, 8].
 
 
+![Alt Text](prints/configuracao_bgp/config_router_1_com_AS_300.png)
+
 *Figura 2.16 — Diagnóstico do estado '(Policy)' impedindo a importação de rotas BGP.*
 
 Para solucionar o bloqueio e liberar a troca de prefixos inter-AS, aplicou-se a diretiva `no bgp ebgp-requires-policy` em todos os roteadores[cite: 7, 8]:
 
 
+![Alt Text](prints/configuracao_bgp/config_policy_router_1.png)
+
 *Figura 2.17 — Aplicação da instrução 'no bgp ebgp-requires-policy'.*
 
 Após a aplicação da instrução e execução de um *soft reset* (`clear ip bgp * soft`), o estado do vizinho passou para a contagem de prefixos recebidos (`PfxRcd = 2`), e a comunicação de ponta a ponta respondeu com 0% de perda[cite: 1, 8]:
 
+
+![Alt Text](prints/configuracao_bgp/resultado_config_router_1_com_AS_300.png)
 
 *Figura 2.18 — Tabela de rotas BGP convergida e ping com 0% de perda para 10.30.0.2.*
 
@@ -271,17 +230,27 @@ Para testar o protocolo de vetor de distância de forma isolada, removeu-se o OS
 **Configuração do RIP nos Roteadores:**
 
 
+![Alt Text](prints/configuracao_rip/config_ip_rip_router_1.png)
+
 *Figura 2.19 — Ativação do RIP e remoção do OSPF no Router 1.*
 
+
+![Alt Text](prints/configuracao_rip/config_rip_router_2.png)
 
 *Figura 2.20 — Configuração do RIP no Router 2.*
 
 
+![Alt Text](prints/configuracao_rip/config_rip_router_3.png)
+
 *Figura 2.21 — Configuração do RIP no Router 3.*
 
 
+![Alt Text](prints/configuracao_rip/config_rip_router_4.png)
+
 *Figura 2.22 — Configuração do RIP no Router 4.*
 
+
+![Alt Text](prints/configuracao_rip/config_rip_router_5.png)
 
 *Figura 2.23 — Limpeza de IGPs no Router 5 mantendo apenas o BGP.*
 
@@ -289,6 +258,8 @@ Para testar o protocolo de vetor de distância de forma isolada, removeu-se o OS
 
 A verificação da tabela interna do *daemon* RIP (`show ip rip`) confirmou o processamento do protocolo na interface local[cite: 9]:
 
+
+![Alt Text](prints/configuracao_rip/config_rip_router_1.png)
 
 *Figura 2.24 — Tabela de estado interno do daemon RIP no Router 1.*
 
@@ -299,17 +270,27 @@ A verificação da tabela interna do *daemon* RIP (`show ip rip`) confirmou o pr
 No terceiro cenário, desativaram-se todos os IGPs e estendeu-se o BGP para atuar de forma única (iBGP interno com `next-hop-self` e eBGP de borda)[cite: 1, 7].
 
 
+![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_1.png)
+
 *Figura 2.25 — Configuração iBGP/eBGP no Router 1.*
 
+
+![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_2.png)
 
 *Figura 2.26 — Configuração iBGP/eBGP no Router 2.*
 
 
+![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_3.png)
+
 *Figura 2.27 — Configuração iBGP/eBGP no Router 3.*
 
 
+![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_4.png)
+
 *Figura 2.28 — Configuração iBGP/eBGP no Router 4.*
 
+
+![Alt Text](prints/configuracao_bgp_only/config_bgp_only_router_5.png)
 
 *Figura 2.29 — Configuração eBGP no Router 5.*
 
@@ -324,30 +305,42 @@ A automação da coleta foi desenvolvida em Python. O script simula a falha de u
 **Execução do Teste OSPF Global (Fim a Fim):**
 
 
+![Alt Text](prints/resultados_metricas/execucao_coletor_ospf.png)
+
 *Figura 3.1 — Coleta de métricas no cenário OSPF.*
 
 **Execução do Teste OSPF Local (Intra-AS 100):**
 
+
+![Alt Text](prints/resultados_metricas/resultados_coletor_ospf_local.png)
 
 *Figura 3.2 — Coleta de métricas intra-AS no cenário OSPF Local.*
 
 **Execução do Teste RIP Global (Fim a Fim):**
 
 
+![Alt Text](prints/resultados_metricas/execucao_coletor_rip.png)
+
 *Figura 3.3 — Coleta de métricas no cenário RIP.*
 
 **Execução do Teste RIP Local (Intra-AS 100):**
 
+
+![Alt Text](prints/resultados_metricas/resultados_coletor_rip_local.png)
 
 *Figura 3.4 — Coleta de métricas intra-AS no cenário RIP Local.*
 
 **Execução do Teste BGP_ONLY (Fim a Fim):**
 
 
+![Alt Text](prints/resultados_metricas/resultados_coletor_bgp_only.png)
+
 *Figura 3.5 — Coleta de métricas no cenário BGP Puro.*
 
 **Arquivo CSV Consolidado (`metricas_desempenho.csv`):**
 
+
+![Alt Text](prints/resultados_metricas/resultados_csv_final.png)
 
 *Figura 3.6 — Conteúdo do arquivo CSV acumulado ao término das rodadas.*
 
@@ -390,6 +383,8 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 #### 1. Comparativo de Latência Média (RTT)
 
 
+![Alt Text](experiments_results/grafico_rtt_comparativo.png)
+
 *Figura 4.1 — Comparação de latência (RTT) entre os cenários de roteamento.*
 
 * **Síntese de Latência:** O protocolo **OSPF** obteve o melhor desempenho de velocidade em ambos os testes (0,167 ms no local e 0,170 ms no global). O **RIP** ficou em nível intermediário (0,207 ms a 0,211 ms), enquanto o **BGP_ONLY** apresentou o maior atraso de propagação (0,229 ms) devido à sobrecarga de processamento de atributos do protocolo de borda.
@@ -399,6 +394,8 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 #### 2. Overhead de Tráfego de Controle e Dados
 
 
+![Alt Text](experiments_results/grafico_overhead_trafego.png)
+
 *Figura 4.2 — Volume de pacotes e bytes trafegados por protocolo.*
 
 * **Síntese de Overhead:** O **BGP_ONLY** gerou a maior taxa de transmissão no ambiente (701 pacotes e 54,5 KB de volume). O **RIP** transmitiu mais pacotes de controle que o OSPF devido aos anúncios periódicos a cada 30 segundos[cite: 9]. O **OSPF** provou ser o protocolo mais silencioso e econômico em termos de tráfego de rede[cite: 7, 9].
@@ -407,6 +404,8 @@ Os dados metrológicos extraídos e salvos no arquivo `metricas_desempenho.csv` 
 
 #### 3. Consumo de Recursos de Hardware (CPU e RAM)
 
+
+![Alt Text](experiments_results/grafico_consumo_hardware.png)
 
 *Figura 4.3 — Utilização de CPU e Memória RAM no Roteador 1.*
 
@@ -469,4 +468,4 @@ python3 gerar_graficos.py
 
 ```
 
-Os gráficos gerados serão salvos em formato `.png` na pasta do projeto, prontos para análise!
+Os gráficos gerados serão salvos em formato `.png` na pasta do projeto, prontos para análise.
